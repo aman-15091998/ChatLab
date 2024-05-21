@@ -16,7 +16,7 @@ const messageInput = document.querySelector("#message-input");
 const leaveBtn = document.querySelector("#leave-btn");
 const existingRoomInput = document.querySelector("#existing-room-input");
 
-const socket = io.connect("http://localhost:3000");
+const socket = io.connect("https://chatlab-nsap.onrender.com/");
 let roomName;
 let socketID;
 socket.emit("getRooms");
