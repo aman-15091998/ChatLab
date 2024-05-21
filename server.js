@@ -23,8 +23,12 @@ import {
   getPreviousMessagesByRoomID,
 } from "./repository/message.repo.js";
 import mongoose from "mongoose";
-
+import path from "path";
 const app = express();
+app.use(express.static(path.resolve("app")));
+app.get("/", (req, res) => {
+  res.status(200).sendFile(path.resolve("app", "chatlab.html"));
+});
 export const server = http.createServer(app);
 app.use(cors());
 let usersTyping = [];
@@ -60,8 +64,6 @@ io.on("connection", async (socket) => {
     socket.emit("availableRooms", allRooms);
   });
   socket.on("joinRoom", async (obj) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
     try {
       const room = await createOrGetRoom(obj.room);
       const newUser = {
@@ -84,52 +86,36 @@ io.on("connection", async (socket) => {
       socket.emit("welcome", user);
       // Inform others
       socket.broadcast.to(obj.room).emit("newUserJoined", user);
-      await session.commitTransaction();
     } catch (err) {
-      startSession.abortTransaction();
       console.log(err);
     }
-    session.endSession();
   });
   socket.on("newMessage", async (obj) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
-      const user = await getUserBySocketID(socket.id, { session });
-      const room = await getRoomByRoomName(obj.roomName, { session });
-      const message = await createNewMessage(room._id, user._id, obj.text, {
-        session,
-      });
+      const user = await getUserBySocketID(socket.id);
+      const room = await getRoomByRoomName(obj.roomName);
+      const message = await createNewMessage(room._id, user._id, obj.text);
       socket.broadcast
         .to(obj.roomName)
         .emit("newMessage", { message: message, user: user });
-
-      await session.commitTransaction();
-      session.endSession();
     } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
       console.error(error);
     }
   });
   socket.on("exitRoom", async (roomName) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
       const user = await getUserBySocketID(socket.id);
-      let room = await createOrGetRoom(roomName, { session });
+      let room = await createOrGetRoom(roomName);
       console.log(user._id.toString());
       room = await removeUserFromRoomByUserID(room._id, user._id.toString());
-      await deleteUserBySocketID(socket.id, { session });
+      await deleteUserBySocketID(socket.id);
       socket.leave(roomName);
-      const activeRoomUsers = await allUsersByRoomID(room._id, { session });
+      const activeRoomUsers = await allUsersByRoomID(room._id);
       // console.log("active users " + activeRoomUsers.length);
       if (activeRoomUsers.length == 0 || activeRoomUsers == null) {
         // delete room and delete all its messages
-        await deleteMessagesByRoomID(room._id, { session });
-        await deleteRoomByRoomID(room._id, { session });
+        await deleteMessagesByRoomID(room._id);
+        await deleteRoomByRoomID(room._id);
         // socket.emit("exitRoom", user);
       } else {
         // send remaining active users
@@ -137,19 +123,12 @@ io.on("connection", async (socket) => {
         socket.broadcast.to(roomName).emit("userLeft", user);
         socket.broadcast.to(roomName).emit("updateUsers", { activeRoomUsers });
       }
-
-      await session.commitTransaction();
-      session.endSession();
     } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
       console.error(error);
     }
   });
 
   socket.on("disconnect", async () => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
     try {
       const user = await getUserBySocketID(socket.id);
       if (user != null) {
@@ -171,11 +150,8 @@ io.on("connection", async (socket) => {
         }
         console.log("User disconnected");
       }
-      await session.commitTransaction();
     } catch (err) {
-      session.abortTransaction();
       console.log(err);
     }
-    session.endSession();
   });
 });
