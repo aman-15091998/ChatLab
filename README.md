@@ -2,7 +2,7 @@
 # ChatLab
 
 Anonymous chatting app using JavaScript, Node.js, MongoDB, CSS and HTML. Users can create
-new rooms or join existing rooms and chat in real time with other active users. Users can see other active users in their room.
+new rooms or join existing rooms and chat in real time with other active users. Users can see other active users in their room. Live link - https://chatlab-nsap.onrender.com/
 
 # Installation
 1) git clone https://github.com/aman-15091998/ChatLab.git
