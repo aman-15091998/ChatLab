@@ -20,4 +20,4 @@ new rooms or join existing rooms and chat in real time with other active users. 
 # Features
 1) Users can create rooms or join existing rooms.
 2) Users can chat with each other.
-3) Tying indicator is there, users will see when others are tying.
+3) Typing indicator is there, users will see when others are typing.
